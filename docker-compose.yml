@@ -1,0 +1,15 @@
+FROM vault
+ADD config.hcl /vault/config/config.hcl
+
+
+FROM ubuntu18:04
+RUN apt-get update && apt-get install -y openssh-server
+ADD config.hcl /etc/vault-ssh-helper.d/config.hcl
+ADD vault-ssh-setup.sh /root/vault-ssh-setup.sh
+ADD .bash-profile /root/bash-profile
+RUN mkdir /var/run/sshd && echo 'root:vaultpwd' | chpasswd &&   sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config &&   apt-get update && apt-get install -y iputils-ping && apt-get install -y unzip && apt-get install -y nano && apt-get install -y mysql-client && wget https://releases.hashicorp.com/vault/1.1.3/vault_1.1.3_linux_amd64.zip && unzip vault_1.1.3_linux_amd64.zip && mv vault /bin && rm vault_1.1.3_linux_amd64.zip
+RUN sed 's@session/s*required/s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
